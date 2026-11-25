@@ -12,7 +12,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { TRACKING_BOOTSTRAP } from "../lib/smartfit-tracking";
+import { TRACKING_BOOTSTRAP, YANDEX_METRIKA_ID } from "../lib/smartfit-tracking";
 
 function NotFoundComponent() {
   return (
@@ -118,6 +118,13 @@ function RootShell({ children }: { children: ReactNode }) {
         <noscript>
           <img hidden width="1" height="1" alt=""
             src="https://www.facebook.com/tr?id=258016955490147&ev=PageView&noscript=1" />
+          <img
+            style={{ position: "absolute", left: "-9999px" }}
+            width="1"
+            height="1"
+            alt=""
+            src={`https://mc.yandex.ru/watch/${YANDEX_METRIKA_ID}`}
+          />
         </noscript>
         {children}
         <Scripts />

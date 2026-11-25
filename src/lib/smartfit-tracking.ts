@@ -1,4 +1,5 @@
 export const LP_VARIANT = "smartfit-a";
+export const YANDEX_METRIKA_ID = 114674342;
 
 export const TRACKING_BOOTSTRAP = `
   window.FB_LP = { variant: ${JSON.stringify(LP_VARIANT)}, debug: false };
@@ -31,6 +32,31 @@ export const TRACKING_BOOTSTRAP = `
   t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
   y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","i589iloenb");
   clarity('set', 'lp_variant', window.FB_LP.variant);
+
+  (function (scriptUrl) {
+    var ym = window.ym = window.ym || function () {
+      (ym.a = ym.a || []).push(arguments);
+    };
+    ym.l = Date.now();
+    if (Array.from(document.scripts).some(function (script) {
+      return script.src === scriptUrl;
+    })) return;
+
+    var tag = document.createElement('script');
+    tag.async = true;
+    tag.src = scriptUrl;
+    document.head.appendChild(tag);
+    ym(${YANDEX_METRIKA_ID}, 'init', {
+      ssr: true,
+      webvisor: true,
+      clickmap: true,
+      ecommerce: 'dataLayer',
+      referrer: document.referrer,
+      url: window.location.href,
+      accurateTrackBounce: true,
+      trackLinks: true
+    });
+  })('https://mc.yandex.ru/metrika/tag.js?id=${YANDEX_METRIKA_ID}');
 `;
 
 const ATTRIBUTION_KEYS = [
