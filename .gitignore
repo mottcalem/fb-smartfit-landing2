@@ -1,0 +1,24 @@
+# Dependencies and build output
+node_modules/
+.output/
+.nitro/
+.wrangler/
+.tanstack/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local files and logs
+.DS_Store
+*.log
+*.local
+
+# Credentials and environment files
+/smtp.txt
+.env
+.env.*
+!.env.example
+!.env.sample
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
