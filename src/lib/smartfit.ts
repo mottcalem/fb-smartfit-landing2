@@ -1,5 +1,7 @@
 // Product catalogue, store config and recommendation logic for the SmartFit landing.
 
+import { appendCheckoutAttribution, trackLandingStep } from "./smartfit-tracking";
+
 export type ModelId = "konfor" | "energy" | "destek";
 export type SizeId = "XS" | "S" | "M" | "L" | "XL" | "XXL";
 
@@ -24,7 +26,6 @@ export interface Model {
   cushionLayer: string;
   supportStructure: string;
   extra?: string[];
-  cta: string;
 }
 
 export const MODELS: Model[] = [
@@ -48,7 +49,6 @@ export const MODELS: Model[] = [
     upper: "Polyester tekstil",
     cushionLayer: "PU foam 3 mm",
     supportStructure: "EVA, TPU spine",
-    cta: "Konfor'u Keşfet",
   },
   {
     id: "energy",
@@ -69,7 +69,6 @@ export const MODELS: Model[] = [
     upper: "Polyester tekstil",
     cushionLayer: "TPE foam 2 mm",
     supportStructure: "EVA, TPU spine",
-    cta: "Energy'yi Keşfet",
   },
   {
     id: "destek",
@@ -95,7 +94,6 @@ export const MODELS: Model[] = [
     cushionLayer: "PU foam 3 mm",
     supportStructure: "EVA ve güçlendirilmiş spine",
     extra: ["Nylon / glass fiber spine", "İlave PU topuk destek parçası"],
-    cta: "Destek'i Keşfet",
   },
 ];
 
@@ -148,7 +146,9 @@ export function shopifyCartUrl(cart: readonly CartLine[]) {
       : null;
   });
   if (variants.includes(null)) return null;
-  return `https://shop.footbalance.com.tr/cart/${variants.join(",")}?storefront=true`;
+  const query = new URLSearchParams({ storefront: "true" });
+  appendCheckoutAttribution(query);
+  return `https://shop.footbalance.com.tr/cart/${variants.join(",")}?${query}`;
 }
 
 export type Purpose = "daily" | "active" | "support";
@@ -164,19 +164,14 @@ export function recommend(purpose: Purpose, feel: Feel): ModelId[] {
   return a === b ? [a] : [a, b];
 }
 
-// GA4 / GTM
-declare global {
-  interface Window {
-    dataLayer?: Record<string, unknown>[];
-  }
-}
 export function track(event: string, params: Record<string, unknown> = {}) {
   if (typeof window === "undefined") return;
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({ event, ...params });
+  trackLandingStep(event, params);
 }
 export const gaItem = (m: ModelId, size?: SizeId) => ({
-  item_id: `smartfit-${m}${size ? `-${size}` : ""}`,
+  item_id: (size && variantId(m, size)) || `smartfit-${m}`,
   item_name: getModel(m).name,
   item_brand: "FootBalance",
   item_variant: size,

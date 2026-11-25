@@ -1,9 +1,10 @@
 /** Store terms supplied by the merchant; no unconfirmed exchange promises. */
 export const STORE_TERMS = {
-  dispatchBusinessDays: 1,
+  dispatchBusinessDays: 2,
   unconditionalReturnDays: 30,
   cleaningIntervalDays: 15,
-  /** Merchant offer: 20% off the second insole in the same cart. */
+  freeShippingLabel: "Ücretsiz Kargo",
+  cartDiscountLabel: "Sepette Özel İndirim",
 } as const;
 
 export const DISPATCH_TEXT = `Tabanlıklarınız ${STORE_TERMS.dispatchBusinessDays} iş günü içerisinde kargoya verilir.`;

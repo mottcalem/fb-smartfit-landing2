@@ -1,14 +1,21 @@
-import { RotateCcw, Truck, Check } from "lucide-react";
+import { RotateCcw, Truck, Check, PackageCheck, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { STORE_TERMS, RETURN_TEXT } from "@/lib/smartfit-policies";
 import { MODEL_IMAGE, Reveal, SectionHead } from "@/components/smartfit/ui";
 import insoleToShoeImg from "@/assets/smartfit-insole-to-shoe.webp";
 
-export function PurchaseAssurance() {
+export function PurchaseAssurance({ showOffers = false }: { showOffers?: boolean }) {
   return (
-    <ul className="flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-navy">
+    <ul className={cn("flex gap-x-5 gap-y-2 text-xs font-semibold text-navy", showOffers ? "flex-col" : "flex-wrap")}>
       <li className="flex items-center gap-2"><RotateCcw className="h-4 w-4 shrink-0 text-primary" />{STORE_TERMS.unconditionalReturnDays} gün koşulsuz iade</li>
       <li className="flex items-center gap-2"><Truck className="h-4 w-4 shrink-0 text-primary" />{STORE_TERMS.dispatchBusinessDays} iş gününde kargoya verilir</li>
+      {showOffers && (
+        <>
+          <li className="flex items-center gap-2"><PackageCheck className="h-4 w-4 shrink-0 text-primary" />{STORE_TERMS.freeShippingLabel}</li>
+          <li className="flex items-center gap-2"><Tag className="h-4 w-4 shrink-0 text-primary" />{STORE_TERMS.cartDiscountLabel}</li>
+        </>
+      )}
     </ul>
   );
 }
@@ -62,6 +69,9 @@ export function InsoleDifference() {
               </div>
             ))}
             <p className="mt-4 text-xs text-muted-foreground">Mevcut tabanlığı çıkarılabilen ve yeterli iç hacmi olan ayakkabılarda uyumu kontrol et.</p>
+            <Button asChild size="lg" className="mt-6 h-12 w-full font-bold sm:w-auto">
+              <a href="#modeller">Ürünleri Keşfet</a>
+            </Button>
           </div>
         </Reveal>
       </div>

@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { TRACKING_BOOTSTRAP } from "../lib/smartfit-tracking";
 
 function NotFoundComponent() {
   return (
@@ -97,7 +98,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml", sizes: "any" },
     ],
   }),
   shellComponent: RootShell,
@@ -110,9 +111,14 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="tr">
       <head>
+        <script dangerouslySetInnerHTML={{ __html: TRACKING_BOOTSTRAP }} />
         <HeadContent />
       </head>
       <body>
+        <noscript>
+          <img hidden width="1" height="1" alt=""
+            src="https://www.facebook.com/tr?id=258016955490147&ev=PageView&noscript=1" />
+        </noscript>
         {children}
         <Scripts />
       </body>

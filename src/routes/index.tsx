@@ -12,8 +12,10 @@ import {
 import { Dots, FamilyVisual, MODEL_IMAGE, ProductVisual, Reveal, SectionHead, modelTone } from "@/components/smartfit/ui";
 import { DailyBenefits, InsoleDifference, PurchaseAssurance, TrialAssurance, UsageGuide } from "@/components/smartfit/confidence";
 import { CLEANING_TEXT, DISPATCH_TEXT, RETURN_TEXT } from "@/lib/smartfit-policies";
+import { captureAttribution, trackEcommerce } from "@/lib/smartfit-tracking";
 import { CONTACT, hasContact, igHref, mailHref, telHref, waHref } from "@/lib/smartfit-contact";
 import { DealerDialog } from "@/components/smartfit/dealer-dialog";
+import { Videos } from "@/components/smartfit/videos";
 import layerStackImg from "@/assets/smartfit-layer-stack-cut.webp";
 import layer1Img from "@/assets/smartfit-layer-1-textile.png";
 import layer2Img from "@/assets/smartfit-layer-2-cushion.png";
@@ -73,6 +75,7 @@ function Landing() {
   const [showSticky, setShowSticky] = useState(false);
   const [cartMessage, setCartMessage] = useState("");
   const focusReturn = useRef<HTMLElement | null>(null);
+  const trackedLanding = useRef(false);
 
   const rememberTrigger = () => {
     focusReturn.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -85,7 +88,12 @@ function Landing() {
   };
 
   useEffect(() => {
-    track("page_view_landing", { page: "smartfit" });
+    if (!trackedLanding.current) {
+      trackedLanding.current = true;
+      captureAttribution();
+      track("page_view_landing", { page: "smartfit" });
+      trackEcommerce("view_item", MODELS.map((item) => gaItem(item.id)));
+    }
     const onScroll = () => {
       const closing = document.getElementById("kapanis")?.getBoundingClientRect();
       const nearEnd = closing ? closing.top < window.innerHeight : false;
@@ -107,7 +115,7 @@ function Landing() {
       const ex = c.find((i) => i.model === m && i.size === s);
       return ex ? c.map((i) => (i === ex ? { ...i, quantity: i.quantity + 1 } : i)) : [...c, { model: m, size: s, quantity: 1 }];
     });
-    track("add_to_cart", { ecommerce: { currency: "TRY", value: PRICE_TL, items: [gaItem(m, s)] } });
+    trackEcommerce("add_to_cart", [gaItem(m, s)]);
     setCartMessage(`${getModel(m).name} ${s} sepete eklendi.`);
     setBuyOpen(false);
     setCartOpen(true);
@@ -116,6 +124,7 @@ function Landing() {
   const openBuy = (selectedModel: ModelId = model ?? "konfor") => {
     if (!cartOpen) rememberTrigger();
     setModel(selectedModel);
+    trackEcommerce("view_item", [gaItem(selectedModel)]);
     setSize(null);
     setCartOpen(false);
     setBuyOpen(true);
@@ -135,17 +144,21 @@ function Landing() {
         <Hero />
         <DailyBenefits />
         <Models selected={model} onPick={(id) => { track("select_item", { ecommerce: { items: [gaItem(id)] } }); openBuy(id); }} />
-        <Wizard onModel={setModel} onBuy={openBuy} />
+        <Wizard onModel={setModel} onAdd={(m, s, trigger) => {
+          focusReturn.current = trigger;
+          addToCart(m, s);
+        }} />
         <InsoleDifference />
         <WhySmartFit />
         <UsageGuide />
+        <Videos />
         <TrialAssurance />
         <Reviews />
         <Faq />
         <ReviewsBanner />
         <Closing onCta={() => scrollTo("modeller")} />
       </main>
-      <Footer onDealer={() => setDealerOpen(true)} />
+      <Footer />
       <DealerDialog open={dealerOpen} onOpenChange={setDealerOpen} />
 
       {/* Mobile sticky purchase bar */}
@@ -199,6 +212,7 @@ function Header({ cartCount, onCart, onDealer }: { cartCount: number; onCart: ()
           <button onClick={() => scrollTo("modeller")} className="hover:text-navy">Modeller</button>
           <button onClick={() => scrollTo("bulucu")} className="hover:text-navy">Model Bulucu</button>
           <button onClick={() => scrollTo("teknoloji")} className="hover:text-navy">Teknoloji</button>
+          <button onClick={() => scrollTo("videolar")} className="hover:text-navy">Videolar</button>
           <button onClick={() => scrollTo("sss")} className="hover:text-navy">SSS</button>
         </nav>
         <div className="flex items-center gap-2">
@@ -271,6 +285,7 @@ function Models({ selected, onPick }: { selected: ModelId | null; onPick: (id: M
           {MODELS.map((m) => (
             <Reveal key={m.id}>
               <article
+                aria-labelledby={`model-${m.id}-title`}
                 className={cn(
                   "group flex h-full flex-col overflow-hidden rounded-3xl border bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-xl",
                   selected === m.id && "ring-2 ring-primary",
@@ -280,7 +295,7 @@ function Models({ selected, onPick }: { selected: ModelId | null; onPick: (id: M
                   <ProductVisual model={m} className="transition-transform duration-500 group-hover:scale-105" />
                 </div>
                 <div className="flex flex-1 flex-col p-6">
-                  <h3 className="text-2xl font-extrabold text-navy">{m.name}</h3>
+                  <h3 id={`model-${m.id}-title`} className="text-2xl font-extrabold text-navy">{m.name}</h3>
                   <p className="mt-1 font-semibold text-navy/80">{m.slogan}</p>
                   <p className="mt-3 text-sm text-muted-foreground">{m.description}</p>
                   <ul className="mt-4 space-y-1.5 text-sm">
@@ -294,9 +309,9 @@ function Models({ selected, onPick }: { selected: ModelId | null; onPick: (id: M
                   </div>
                   <div className="mt-auto flex items-center justify-between gap-3 pt-6">
                     <span className="text-xl font-extrabold text-navy">{formatTL(PRICE_TL)}</span>
-                    <Button className="h-12 px-5 font-bold" onClick={() => onPick(m.id)}>{m.cta}</Button>
+                    <Button className="h-12 px-5 font-bold" onClick={() => onPick(m.id)}>Numaranı Seç</Button>
                   </div>
-                  <div className="mt-4 border-t pt-4"><PurchaseAssurance /></div>
+                  <div className="mt-4 border-t pt-4"><PurchaseAssurance showOffers /></div>
                 </div>
               </article>
             </Reveal>
@@ -346,7 +361,10 @@ const REASONS: Record<ModelId, string[]> = {
   destek: ["Daha belirgin ayak kavis desteği için güçlendirilmiş yapı.", "Stabil kullanım hissi için tasarlandı."],
 };
 
-function Wizard({ onModel, onBuy }: { onModel: (m: ModelId) => void; onBuy: (m: ModelId) => void }) {
+function Wizard({ onModel, onAdd }: {
+  onModel: (m: ModelId) => void;
+  onAdd: (m: ModelId, s: SizeId, trigger: HTMLButtonElement) => void;
+}) {
   const [size, setSize] = useState<SizeId | null>(null);
   const [step, setStep] = useState(0);
   const [purpose, setPurpose] = useState<Purpose | null>(null);
@@ -359,12 +377,13 @@ function Wizard({ onModel, onBuy }: { onModel: (m: ModelId) => void; onBuy: (m: 
   const next = () => setStep((s) => s + 1);
 
   const finish = () => {
-    if (!purpose || !feel) return;
+    if (!purpose || !feel || !size) return;
     const rec = recommend(purpose, feel);
     const first = rec[0];
     if (!first) return;
     setActive(first);
     onModel(first);
+    trackEcommerce("view_item", [gaItem(first, size)]);
     track("finder_complete", { recommended: rec.join(","), size });
     setStep(3);
   };
@@ -441,14 +460,19 @@ function Wizard({ onModel, onBuy }: { onModel: (m: ModelId) => void; onBuy: (m: 
               <Button size="lg" className="mt-6 h-12 w-full font-bold md:w-auto md:px-10" disabled={!size} onClick={finish}>Önerimi Gör</Button>
             </>
           )}
-          {step === 3 && m && (
+          {step === 3 && m && size && (
             <div>
               {result.length > 1 && (
                 <div className="mb-6">
                   <p className="mb-3 text-sm font-bold text-navy">Sana uygun olabilecek iki model</p>
                   <div className="grid grid-cols-2 gap-2">
                     {result.map((id) => (
-                      <button key={id} onClick={() => { setActive(id); onModel(id); }}
+                      <button key={id} onClick={() => {
+                        if (id === active) return;
+                        setActive(id);
+                        onModel(id);
+                        trackEcommerce("view_item", [gaItem(id, size)]);
+                      }}
                         className={cn("min-h-12 rounded-xl border-2 px-3 font-bold text-navy", active === id ? "border-primary bg-accent" : "border-border")}>
                         {getModel(id).name}
                       </button>
@@ -472,9 +496,9 @@ function Wizard({ onModel, onBuy }: { onModel: (m: ModelId) => void; onBuy: (m: 
                     <span className="text-sm text-muted-foreground">Numara: <b className="text-navy">{size} ({SIZES.find((s) => s.id === size)?.range})</b></span>
                     <span className="text-2xl font-extrabold text-navy">{formatTL(PRICE_TL)}</span>
                   </div>
-                  <Button size="lg" className="mt-5 h-12 w-full font-bold" onClick={() => onBuy(m.id)}>Satın Al</Button>
+                  <Button size="lg" className="mt-5 h-12 w-full font-bold" onClick={(event) => onAdd(m.id, size, event.currentTarget)}>Sepete Ekle</Button>
                   <Button size="lg" variant="outline" className="mt-3 h-12 w-full font-bold" onClick={() => scrollTo("modeller")}>Diğer Modelleri İncele</Button>
-                  <div className="mt-4"><PurchaseAssurance /></div>
+                  <div className="mt-4"><PurchaseAssurance showOffers /></div>
                   <button onClick={reset} className="mt-4 w-full text-sm font-semibold text-muted-foreground underline-offset-4 hover:underline">Seçimimi Değiştir</button>
                 </div>
               </div>
@@ -690,7 +714,7 @@ function ReviewsBanner() {
 /* ---------------- 7B. FAQ ---------------- */
 const FAQS: [string, string][] = [
   ["SmartFit hazır tabanlık mı?", "Evet. SmartFit modelleri kullanıma hazır tabanlıklardır; şekillendirme veya ek işlem gerektirmez."],
-  ["Konfor, Energy ve Destek arasındaki farklar nelerdir?", "Konfor en yüksek yastıklamayı, Energy yastıklama ve desteğin dengesini, Destek ise en güçlü ayak kavis desteğini sunar."],
+  ["Konfor, Energy ve Destek arasındaki farklar nelerdir?", "Konfor, gün boyu ayakta kalanlar ve üst seviye konfor hissi arayanlar içindir. Energy, aktif spor yapanlar, performans ve destek arayanlara özeldir. Destek ise basış problemi yaşayanlar için güçlü kavis desteği sunar."],
   ["Bana uygun SmartFit modelini nasıl seçebilirim?", "Yukarıdaki 3 adımlı model bulucuyu kullanabilir veya Modeller bölümünden üç modeli inceleyebilirsin."],
   ["SmartFit'i mevcut ayakkabımda kullanabilir miyim?", "Mevcut tabanlığı çıkarılabilen ayakkabılarda, eski tabanlığın yerine yerleştirilerek kullanılır."],
   ["Hangi ayakkabı numarasını almalıyım?", "Normalde giydiğin ayakkabı numarasına göre seç: XS 36–37, S 38–39, M 40–41, L 42–43, XL 44–45, XXL 46–47."],
@@ -758,7 +782,7 @@ function ContactItem({ icon: Icon, label, value, href }: {
   );
 }
 
-function Footer({ onDealer }: { onDealer: () => void }) {
+function Footer() {
   return (
     <footer className="border-t py-10 pb-28 md:pb-10">
       <div className="mx-auto flex max-w-[1240px] flex-col gap-8 px-5 text-sm md:flex-row md:items-start md:justify-between">
@@ -767,11 +791,6 @@ function Footer({ onDealer }: { onDealer: () => void }) {
           <p className="mt-2 max-w-xs text-muted-foreground">
             Finlandiya mühendisliğiyle geliştirilen akıllı tabanlık desteği.
           </p>
-          <div className="mt-5 max-w-xs rounded-2xl border bg-muted p-4">
-            <p className="font-bold text-navy">Mağazanızda FootBalance satın</p>
-            <p className="mt-1 text-xs text-muted-foreground">Spor ve ayakkabı perakendecileri için bayilik başvurusu.</p>
-            <Button size="sm" className="mt-3" onClick={onDealer}>Bayi Olun</Button>
-          </div>
         </div>
         {hasContact() && (
           <div className="grid gap-4 sm:grid-cols-2 md:gap-x-12">
@@ -853,7 +872,10 @@ function CartSheet({ open, onOpenChange, onCloseAutoFocus, cart, message, onRemo
   const checkoutUrl = shopifyCartUrl(cart);
   const total = cart.reduce((sum, line) => sum + line.quantity * PRICE_TL, 0);
   const checkout = () => {
-    track("begin_checkout", { ecommerce: { currency: "TRY", value: total, items: cart.map((i) => ({ ...gaItem(i.model, i.size), quantity: i.quantity })) } });
+    trackEcommerce("begin_checkout", cart.map((item) => ({
+      ...gaItem(item.model, item.size),
+      quantity: item.quantity,
+    })));
   };
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -889,20 +911,25 @@ function CartSheet({ open, onOpenChange, onCloseAutoFocus, cart, message, onRemo
             );
           })}
         </ul>
-        {cart.length > 0 && (
-          <div className="space-y-3 border-t p-4">
-            <div className="flex justify-between font-extrabold text-navy"><span>Toplam (KDV dahil)</span><span>{formatTL(total)}</span></div>
-            <PurchaseAssurance />
-            {checkoutUrl && (
-              <>
-                <Button asChild size="lg" className="h-12 w-full font-bold">
-                  <a href={checkoutUrl} target="_blank" rel="noopener noreferrer" onClick={checkout}>Ödemeye geç</a>
-                </Button>
-                <p className="text-center text-xs text-muted-foreground">Sepetin Shopify mağazasında yeni sekmede açılır. Ödemeni orada tamamlayabilirsin.</p>
-              </>
-            )}
-          </div>
-        )}
+        <div className="space-y-3 border-t p-4">
+          {cart.length > 0 && (
+            <>
+              <div className="flex justify-between font-extrabold text-navy"><span>Toplam (KDV dahil)</span><span>{formatTL(total)}</span></div>
+              <PurchaseAssurance showOffers />
+              {checkoutUrl && (
+                <>
+                  <Button asChild size="lg" className="h-12 w-full font-bold">
+                    <a href={checkoutUrl} target="_blank" rel="noopener noreferrer" onClick={checkout}>Ödemeye geç</a>
+                  </Button>
+                  <p className="text-center text-xs text-muted-foreground">Sepetin Shopify mağazasında yeni sekmede açılır. Ödemeni orada tamamlayabilirsin.</p>
+                </>
+              )}
+            </>
+          )}
+          <Button type="button" variant="outline" size="lg" className="h-12 w-full font-bold" onClick={() => onOpenChange(false)}>
+            Alışverişe Devam Et
+          </Button>
+        </div>
       </SheetContent>
     </Sheet>
   );
