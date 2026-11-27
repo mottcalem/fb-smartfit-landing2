@@ -42,7 +42,7 @@ describe("SmartFit satın alma akışı", () => {
     const url = new URL(checkout.href);
     expect(url.pathname).toBe("/cart/68251415970088:1");
     expect(Object.fromEntries(url.searchParams)).toEqual({
-      storefront: "true", "attributes[lp]": "smartfit-a", utm_source: "test", gclid: "test-click",
+      storefront: "true", "attributes[lp]": "smartfit-b", utm_source: "test", gclid: "test-click",
     });
     expect(gtag).toHaveBeenCalledWith("event", "add_to_cart", expect.objectContaining({
       value: 4900, currency: "TRY",
@@ -55,7 +55,7 @@ describe("SmartFit satın alma akışı", () => {
 
     checkout.addEventListener("click", (event) => event.preventDefault(), { once: true });
     fireEvent.click(checkout);
-    expect(gtag).toHaveBeenCalledWith("event", "begin_checkout", expect.objectContaining({ lp_variant: "smartfit-a" }));
+    expect(gtag).toHaveBeenCalledWith("event", "begin_checkout", expect.objectContaining({ lp_variant: "smartfit-b" }));
     expect(clarity).toHaveBeenCalledWith("event", "checkout_click");
     expect(gtag.mock.calls.filter(([, name]) => name === "add_to_cart")).toHaveLength(1);
   });
@@ -103,14 +103,14 @@ describe("SmartFit satın alma akışı", () => {
     cart = add(chooseModel("SmartFit Energy"), /XL 44–45/);
     expect(within(cart.getByRole("list", { name: "Sepetteki ürünler" })).getAllByRole("listitem")).toHaveLength(2);
     const checkout = cart.getByRole("link", { name: "Ödemeye geç" });
-    expect(checkout).toHaveAttribute("href", "https://shop.footbalance.com.tr/cart/68251290599720:2,68251415970088:1?storefront=true&attributes%5Blp%5D=smartfit-a");
+    expect(checkout).toHaveAttribute("href", "https://shop.footbalance.com.tr/cart/68251290599720:2,68251415970088:1?storefront=true&attributes%5Blp%5D=smartfit-b");
     expect(checkout).toHaveAttribute("target", "_blank");
     expect(checkout).toHaveAttribute("rel", "noopener noreferrer");
     expect(screen.getByRole("button", { name: "Sepet, 3 ürün", hidden: true })).toBeInTheDocument();
 
     fireEvent.click(cart.getByRole("button", { name: "Kaldır: SmartFit Konfor M" }));
     expect(cart.getByRole("status")).toHaveTextContent("SmartFit Konfor M sepetten kaldırıldı.");
-    expect(checkout).toHaveAttribute("href", "https://shop.footbalance.com.tr/cart/68251415970088:1?storefront=true&attributes%5Blp%5D=smartfit-a");
+    expect(checkout).toHaveAttribute("href", "https://shop.footbalance.com.tr/cart/68251415970088:1?storefront=true&attributes%5Blp%5D=smartfit-b");
     fireEvent.click(cart.getByRole("button", { name: "Kaldır: SmartFit Energy XL" }));
     expect(cart.getByText("Sepetin boş.")).toBeInTheDocument();
     expect(cart.queryByRole("link", { name: "Ödemeye geç" })).not.toBeInTheDocument();

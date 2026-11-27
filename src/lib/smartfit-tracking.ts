@@ -1,4 +1,4 @@
-export const LP_VARIANT = "smartfit-a";
+export const LP_VARIANT = "smartfit-b";
 export const YANDEX_METRIKA_ID = 114674342;
 
 export const TRACKING_BOOTSTRAP = `
